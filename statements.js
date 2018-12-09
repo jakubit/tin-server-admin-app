@@ -3,7 +3,7 @@
 */
 
 statement := '{' {attribute} '}'
-attribute := [type, action, request, response, data]
+attribute := [type | action | request | response | data]
 
 type      := "type"   ':' ["request" | "response"]
 action    := "action" ':' ["create" | "read" | "update" | "delete"]
