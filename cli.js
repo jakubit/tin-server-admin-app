@@ -31,8 +31,8 @@ const run = async () => {
       inquirer.showMenu().then((answer) => {
         console.log(answer);
       });
-      
-    }, 2000);
+
+    }, 1000);
 
 
 
