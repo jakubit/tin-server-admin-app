@@ -4,63 +4,95 @@ const figlet = require('figlet');
 const CLI = require('clui');
 const Spinner = CLI.Spinner;
 const status = new Spinner('Authenticating you, please wait...');
-const features = require('./lib/features');
+//const features = require('./lib/features');
+const mainMenu = require('./lib/mainMenu');
+//const inquirer = require('./lib/inquirer');
+const users = require('./lib/users');
+const login = require('./lib/login');
 
+
+// Display logo
 clear();
 console.log(
     chalk.yellow(
-        figlet.textSync('FileFly', { horizontalLayout: 'full'})
+        figlet.textSync('Files', { horizontalLayout: 'full'})
     )
 );
 
-const inquirer = require('./lib/inquirer');
+/*
+* 1. Pobranie portu i adresu z pliku config
+* 2. Utworzenie socketu do serwera
+* 3. Logowanie
+* 4. Menu główne
+*/
 
-const menuHandler = () => {
-  inquirer.showMenu().then((answer) => {
-    console.log(answer);
+const showMainMenu = () => {
+  mainMenu.menuHandler().then((answer) => {
     switch (answer.option) {
       case '1':
         // Create new user
-        features.createNewUser();
+        users.createNew().then((answer) => {
+          console.log(answer);
+          showMainMenu();
+        });
         break;
       case '2':
         // Delete user
-        features.deleteUser();
+        users.delete().then((answer) => {
+          console.log(answer);
+          showMainMenu();
+        });
         break;
       case '3':
         // Edit user
-        features.editUser();
+        users.edit().then((answer) => {
+          console.log(answer);
+          showMainMenu();
+        });
         break;
       case '4':
         // Show users
-        features.showUsers();
+        showUsers();
         break;
       case '5':
         // Show catalog
-        features.showCatalog();
+        showCatalog();
         break;
       case '6':
         // Delete file
-        features.deleteFile();
+        deleteFile();
         break;
       case '7':
         // Turn on the service
-        features.turnOnService();
+        turnOnService();
         break;
       case '8':
         // Turn off the service
-        features.turnOffService();
+        turnOffService();
         break;
       case '9':
         break;
     };
-    return answer.option;
-  }).then((option) => {
-    if (option != 9)
-      menuHandler();
   });
 }
 
+login.login().then((answer) => {
+  status.start();
+
+  setTimeout(() => {
+    status.stop();
+    console.log(answer);
+
+    // menu glowne
+    showMainMenu();
+
+  }, 1000);
+})
+
+
+
+
+/*
 const run = async () => {
     const credentials = await inquirer.askAdminCredentials();
     /*
@@ -68,7 +100,7 @@ const run = async () => {
     * 1. Utworz socket
     * 2. Polacz sie i wyslij dane logowanie
     * 3. Jesli ok to wyswietl menu, jesli nie ok to wyswietl blad
-    */
+
     status.start();
 
     setTimeout(() => {
@@ -76,15 +108,15 @@ const run = async () => {
       console.log(credentials);
 
       // Pokaz menu
-      menuHandler();
+      mainMenu.menuHandler();
 
     }, 1000);
 
-
-
     /*
     const newUser = await inquirer.askNewUserCredentials();
-    console.log(newUser);*/
-}
+    console.log(newUser);
+};
 
 run();
+
+*/
