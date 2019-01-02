@@ -9,6 +9,8 @@ const mainMenu = require('./lib/mainMenu');
 //const inquirer = require('./lib/inquirer');
 const users = require('./lib/users');
 const login = require('./lib/login');
+const files = require('./lib/files');
+const service = require('./lib/service');
 
 
 // Display logo
@@ -52,23 +54,38 @@ const showMainMenu = () => {
         break;
       case '4':
         // Show users
-        showUsers();
+        users.show().then((answer) => {
+          console.log(answer);
+          showMainMenu();
+        })
         break;
       case '5':
         // Show catalog
-        showCatalog();
+        files.showDirectory().then((answer) => {
+          console.log(answer);
+          showMainMenu();
+        })
         break;
       case '6':
         // Delete file
-        deleteFile();
+        files.delete().then((answer) => {
+          console.log(answer);
+          showMainMenu();
+        });
         break;
       case '7':
         // Turn on the service
-        turnOnService();
+        service.turnOn().then((answer) => {
+          console.log(answer);
+          showMainMenu();
+        });
         break;
       case '8':
         // Turn off the service
-        turnOffService();
+        service.turnOff().then((answer) => {
+          console.log(answer);
+          showMainMenu();
+        });
         break;
       case '9':
         break;
