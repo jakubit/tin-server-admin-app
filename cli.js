@@ -3,7 +3,7 @@ const clear = require('clear');
 const figlet = require('figlet');
 const CLI = require('clui');
 const Spinner = CLI.Spinner;
-const status = new Spinner('Authenticating you, please wait...');
+const status = new Spinner('Sending reuest...');
 //const features = require('./lib/features');
 const mainMenu = require('./lib/mainMenu');
 //const inquirer = require('./lib/inquirer');
@@ -12,6 +12,23 @@ const login = require('./lib/login');
 const files = require('./lib/files');
 const service = require('./lib/service');
 
+const net = require('net');
+const fs = require('fs');
+
+const client = net.Socket();
+const config = JSON.parse(fs.readFileSync('config.json', 'utf8'));
+
+// Client callback for incoming data
+client.on('data', function(data) {
+    console.log('Received from server: ' + data);
+    status.stop();
+    showMainMenu();
+});
+
+// Client callback for closing socket
+client.on('close', function() {
+    console.log('Connection closed');
+});
 
 // Display logo
 clear();
@@ -21,13 +38,16 @@ console.log(
     )
 );
 
-/*
-* 1. Pobranie portu i adresu z pliku config
-* 2. Utworzenie socketu do serwera
-* 3. Logowanie
-* 4. Menu główne
-*/
+// Connect and login
+login.login().then((answer) => {
+  console.log(answer);
+  client.connect(config.port, config.host, () => {
+    client.write("LOGIN_REQUEST");
+    status.start();
+  });
+})
 
+// Main menu
 const showMainMenu = () => {
   mainMenu.menuHandler().then((answer) => {
     switch (answer.option) {
@@ -35,105 +55,62 @@ const showMainMenu = () => {
         // Create new user
         users.createNew().then((answer) => {
           console.log(answer);
-          showMainMenu();
+          client.write("NEW_USER_REQUEST");
+          status.start();
         });
         break;
       case '2':
         // Delete user
         users.delete().then((answer) => {
           console.log(answer);
-          showMainMenu();
+          client.write("DELETE_USER_REQUEST");
         });
         break;
       case '3':
         // Edit user
         users.edit().then((answer) => {
           console.log(answer);
-          showMainMenu();
+          client.write("EDIT_USER_REQUEST");
         });
         break;
       case '4':
         // Show users
         users.show().then((answer) => {
           console.log(answer);
-          showMainMenu();
+          client.write("SHOW_USERS_REQUEST");
         })
         break;
       case '5':
         // Show catalog
         files.showDirectory().then((answer) => {
           console.log(answer);
-          showMainMenu();
+          client.write("SHOW_CATALOG_REQUEST");
         })
         break;
       case '6':
         // Delete file
         files.delete().then((answer) => {
           console.log(answer);
-          showMainMenu();
+          client.write("DELETE_FILE_REQUEST");
         });
         break;
       case '7':
         // Turn on the service
         service.turnOn().then((answer) => {
           console.log(answer);
-          showMainMenu();
+          client.write("TURN_ON_REQUEST");
         });
         break;
       case '8':
         // Turn off the service
         service.turnOff().then((answer) => {
           console.log(answer);
-          showMainMenu();
+          client.write("TURN_OFF_REQUEST");
         });
         break;
       case '9':
+        client.destroy();
         break;
     };
   });
 }
-
-login.login().then((answer) => {
-  status.start();
-
-  setTimeout(() => {
-    status.stop();
-    console.log(answer);
-
-    // menu glowne
-    showMainMenu();
-
-  }, 1000);
-})
-
-
-
-
-/*
-const run = async () => {
-    const credentials = await inquirer.askAdminCredentials();
-    /*
-    * Logowanie:
-    * 1. Utworz socket
-    * 2. Polacz sie i wyslij dane logowanie
-    * 3. Jesli ok to wyswietl menu, jesli nie ok to wyswietl blad
-
-    status.start();
-
-    setTimeout(() => {
-      status.stop();
-      console.log(credentials);
-
-      // Pokaz menu
-      mainMenu.menuHandler();
-
-    }, 1000);
-
-    /*
-    const newUser = await inquirer.askNewUserCredentials();
-    console.log(newUser);
-};
-
-run();
-
-*/
