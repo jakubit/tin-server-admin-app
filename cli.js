@@ -15,19 +15,28 @@ const service = require('./lib/service');
 const net = require('net');
 const fs = require('fs');
 
-const client = net.Socket();
+const server = net.Socket();
 const config = JSON.parse(fs.readFileSync('config.json', 'utf8'));
 
+const responseParser = require('./lib/responseParser');
+
 // Client callback for incoming data
-client.on('data', function(data) {
-    console.log('Received from server: ' + data);
-    status.stop();
-    showMainMenu();
+server.on('data', function(data) {
+    //console.log('Received from server: ' + data);
+    responseParser.parse(JSON.parse(data)).then((result) => {
+      if (result == 1) {
+        auth();
+      } else {
+        //status.stop();
+        showMainMenu();
+      }
+    });
 });
 
 // Client callback for closing socket
-client.on('close', function() {
+server.on('close', function() {
     console.log('Connection closed');
+    server.destroy();
 });
 
 // Display logo
@@ -38,14 +47,26 @@ console.log(
     )
 );
 
-// Connect and login
-login.login().then((answer) => {
-  console.log(answer);
-  client.connect(config.port, config.host, () => {
-    client.write("LOGIN_REQUEST");
-    status.start();
+const auth = () => {
+  login.login().then((answer) => {
+    console.log(answer);
+    const msg = {
+      "type": "REQUEST",
+      "command": "AUTH",
+      "username": answer.username,
+      "password": answer.password
+    };
+    console.log(msg);
+    server.write(JSON.stringify(msg) + '\0');
+    //status.start();
   });
-})
+};
+
+// Connect and login
+server.connect(config.port, config.host, () => {
+  // login
+  auth();
+});
 
 // Main menu
 const showMainMenu = () => {
@@ -55,22 +76,51 @@ const showMainMenu = () => {
         // Create new user
         users.createNew().then((answer) => {
           console.log(answer);
-          client.write("NEW_USER_REQUEST");
-          status.start();
+          //client.write("NEW_USER_REQUEST");
+          const msg = {
+            "type": "REQUEST",
+            "command": "CREATEUSER",
+            "username": answer.username,
+            "password": answer.password,
+            "public": answer.public,
+            "private": answer.private
+          };
+          console.log(msg);
+          //client.write(JSON.stringify(msg) + '\0');
+          //status.start();
         });
         break;
       case '2':
         // Delete user
         users.delete().then((answer) => {
           console.log(answer);
-          client.write("DELETE_USER_REQUEST");
+          //client.write("DELETE_USER_REQUEST");
+          const msg = {
+            "type": "REQUEST",
+            "command": "DELETEUSER",
+            "username": answer.username
+          };
+          console.log(msg);
+          //client.write(JSON.stringify(msg) + '\0');
+          //status.start();
         });
         break;
       case '3':
         // Edit user
         users.edit().then((answer) => {
           console.log(answer);
-          client.write("EDIT_USER_REQUEST");
+          //client.write("EDIT_USER_REQUEST");
+          const msg = {
+	           "type": "REQUEST",
+	           "command": "CHUSER",
+	           "username": answer.username,
+	           "password": answer.password,
+	           "public": answer.public,
+	           "private": answer.private
+           };
+           console.log(msg);
+           //client.write(JSON.stringify(msg) + '\0');
+           //status.start();
         });
         break;
       case '4':
@@ -91,25 +141,39 @@ const showMainMenu = () => {
         // Delete file
         files.delete().then((answer) => {
           console.log(answer);
-          client.write("DELETE_FILE_REQUEST");
+          //client.write("DELETE_FILE_REQUEST");
         });
         break;
       case '7':
         // Turn on the service
         service.turnOn().then((answer) => {
           console.log(answer);
-          client.write("TURN_ON_REQUEST");
+          //client.write("TURN_ON_REQUEST");
+          const msg = {
+            "type": "REQUEST",
+            "command": "STARTUP"
+          };
+          console.log(msg);
+          //client.write(JSON.stringify(msg) + '\0');
+          //status.start();
         });
         break;
       case '8':
         // Turn off the service
         service.turnOff().then((answer) => {
           console.log(answer);
-          client.write("TURN_OFF_REQUEST");
+          //client.write("TURN_OFF_REQUEST");
+          const msg = {
+            "type": "REQUEST",
+            "command": "SHUTDOWN"
+          };
+          console.log(msg);
+          //client.write(JSON.stringify(msg) + '\0');
+          //status.start();
         });
         break;
       case '9':
-        client.destroy();
+        server.destroy();
         break;
     };
   });
