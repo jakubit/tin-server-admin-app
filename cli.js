@@ -23,14 +23,15 @@ const responseParser = require('./lib/responseParser');
 // Client callback for incoming data
 server.on('data', function(data) {
     //console.log('Received from server: ' + data);
-    responseParser.parse(JSON.parse(data)).then((result) => {
-      if (result == 1) {
-        auth();
-      } else {
-        //status.stop();
-        showMainMenu();
-      }
-    });
+    const response = JSON.parse(data);
+    console.log(response);
+    if (response.code != "200" && response.command == "AUTH") {
+      // exit app
+      server.destroy();
+      process.exit(1);
+    } else {
+      showMainMenu();
+    }
 });
 
 // Client callback for closing socket
@@ -85,8 +86,8 @@ const showMainMenu = () => {
             "public": answer.public,
             "private": answer.private
           };
-          console.log(msg);
-          //client.write(JSON.stringify(msg) + '\0');
+          //console.log(msg);
+          server.write(JSON.stringify(msg) + '\0');
           //status.start();
         });
         break;
@@ -94,14 +95,14 @@ const showMainMenu = () => {
         // Delete user
         users.delete().then((answer) => {
           console.log(answer);
-          //client.write("DELETE_USER_REQUEST");
+          //server.write("DELETE_USER_REQUEST");
           const msg = {
             "type": "REQUEST",
             "command": "DELETEUSER",
             "username": answer.username
           };
-          console.log(msg);
-          //client.write(JSON.stringify(msg) + '\0');
+          //console.log(msg);
+          server.write(JSON.stringify(msg) + '\0');
           //status.start();
         });
         break;
@@ -109,7 +110,7 @@ const showMainMenu = () => {
         // Edit user
         users.edit().then((answer) => {
           console.log(answer);
-          //client.write("EDIT_USER_REQUEST");
+          //server.write("EDIT_USER_REQUEST");
           const msg = {
 	           "type": "REQUEST",
 	           "command": "CHUSER",
@@ -119,42 +120,47 @@ const showMainMenu = () => {
 	           "private": answer.private
            };
            console.log(msg);
-           //client.write(JSON.stringify(msg) + '\0');
+           server.write(JSON.stringify(msg) + '\0');
            //status.start();
         });
         break;
       case '4':
-        // Show users
+        // Show user
         users.show().then((answer) => {
           console.log(answer);
-          client.write("SHOW_USERS_REQUEST");
+          const msg = {
+	           "type": "REQUEST",
+	           "command": "USER",
+	           "username": answer.username
+           };
+          server.write(JSON.stringify(msg) + '\0');
         })
         break;
       case '5':
         // Show catalog
         files.showDirectory().then((answer) => {
           console.log(answer);
-          client.write("SHOW_CATALOG_REQUEST");
+          server.write("SHOW_CATALOG_REQUEST");
         })
         break;
       case '6':
         // Delete file
         files.delete().then((answer) => {
           console.log(answer);
-          //client.write("DELETE_FILE_REQUEST");
+          //server.write("DELETE_FILE_REQUEST");
         });
         break;
       case '7':
         // Turn on the service
         service.turnOn().then((answer) => {
           console.log(answer);
-          //client.write("TURN_ON_REQUEST");
+          //server.write("TURN_ON_REQUEST");
           const msg = {
             "type": "REQUEST",
             "command": "STARTUP"
           };
           console.log(msg);
-          //client.write(JSON.stringify(msg) + '\0');
+          //server.write(JSON.stringify(msg) + '\0');
           //status.start();
         });
         break;
@@ -162,13 +168,13 @@ const showMainMenu = () => {
         // Turn off the service
         service.turnOff().then((answer) => {
           console.log(answer);
-          //client.write("TURN_OFF_REQUEST");
+          //server.write("TURN_OFF_REQUEST");
           const msg = {
             "type": "REQUEST",
             "command": "SHUTDOWN"
           };
           console.log(msg);
-          //client.write(JSON.stringify(msg) + '\0');
+          //server.write(JSON.stringify(msg) + '\0');
           //status.start();
         });
         break;
